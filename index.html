@@ -121,7 +121,7 @@ function getTodaySet(){
 let current=[],view="today",pageOffset=0;
 const gURL=t=>"https://translate.google.com/?sl=pl&tl=zh-CN&text="+encodeURIComponent(t)+"&op=translate";
 // After deploying worker/index.js, set this to its public /tts URL.
-const TTS_PROXY_URL="";
+const TTS_PROXY_URL="https://polish-google-tts.hwc1429070845.workers.dev/tts";
 let activeAudio=null;
 function speak(text){
  const t=String(text||"").trim();if(!t)return;
