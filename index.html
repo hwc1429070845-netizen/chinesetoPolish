@@ -120,11 +120,16 @@ function getTodaySet(){
 }
 let current=[],view="today",pageOffset=0;
 const gURL=t=>"https://translate.google.com/?sl=pl&tl=zh-CN&text="+encodeURIComponent(t)+"&op=translate";
+// After deploying worker/index.js, set this to its public /tts URL.
+const TTS_PROXY_URL="";
 let activeAudio=null;
 function speak(text){
  const t=String(text||"").trim();if(!t)return;
  if(activeAudio){activeAudio.pause();activeAudio=null;}
- const a=new Audio("https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=pl&q="+encodeURIComponent(t));
+ const googleAudioUrl=TTS_PROXY_URL
+  ?TTS_PROXY_URL+"?text="+encodeURIComponent(t)
+  :"https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=pl&q="+encodeURIComponent(t);
+ const a=new Audio(googleAudioUrl);
  activeAudio=a;a.preload="auto";
  let settled=false;let fallbackTimer;
  const useDeviceVoice=()=>{
