@@ -77,7 +77,7 @@ footer{font-size:11px;color:var(--muted);margin-top:22px;line-height:1.7;text-al
   <div class="prog"><div id="bar"></div></div>
   <div class="row"><button class="next" id="resetBtn" style="color:var(--muted);font-size:13px;padding:0">重新练习今天</button></div>
 </section>
-<footer>点击单词发音，释义显示在句子上方。学习数据保存在本浏览器 localStorage 中。<br>在线例句来自 Tatoeba，翻译来自 Google。优先使用 Google 发音；若不可用会使用设备波兰语语音，可点“翻译 ↗”打开 Google 翻译播放。需要网络连接。</footer>
+<footer>点击单词发音，释义显示在句子上方。学习数据保存在本浏览器 localStorage 中。<br>在线例句来自 Tatoeba，翻译来自 Google。直接播放 Google 发音；若加载失败，可点“翻译 ↗”在 Google 翻译中播放。需要网络连接。</footer>
 </main>
 <div class="mask" id="mask"><div class="sheet"><div class="sh"><h2 id="shTitle"></h2><button id="shClose">✕</button></div><div class="list" id="shList"></div></div></div>
 <div class="toast" id="toast"></div>
@@ -123,26 +123,19 @@ const gURL=t=>"https://translate.google.com/?sl=pl&tl=zh-CN&text="+encodeURIComp
 let activeAudio=null;
 function speak(text){
  const t=String(text||"").trim();if(!t)return;
- // Google Translate audio is attempted first. Its unofficial TTS endpoint can
- // be unavailable on some networks/devices, so retain a speech and page fallback.
  if(activeAudio){activeAudio.pause();activeAudio=null;}
+ // Play Google Translate's Polish audio directly. Do not substitute a device voice.
  const a=new Audio("https://translate.google.com/translate_tts?ie=UTF-8&client=gtx&tl=pl&q="+encodeURIComponent(t));
  activeAudio=a;a.preload="auto";
- let settled=false;let fallbackTimer;
- const fallback=()=>{
-  if(settled)return;settled=true;clearTimeout(fallbackTimer);a.pause();
+ const failed=()=>{
   if(activeAudio===a)activeAudio=null;
-  if("speechSynthesis" in window){
-   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="pl-PL";u.rate=.83;speechSynthesis.speak(u);return;}catch(e){}
-  }
-  toast("自动朗读不可用，请点“翻译 ↗”在 Google 翻译中播放");
+  toast("Google 发音加载失败。请点“翻译 ↗”，在 Google 翻译中播放。");
  };
- a.addEventListener("error",fallback,{once:true});
- a.addEventListener("playing",()=>clearTimeout(fallbackTimer),{once:true});
+ a.addEventListener("error",failed,{once:true});
  a.addEventListener("ended",()=>{if(activeAudio===a)activeAudio=null;},{once:true});
- const p=a.play();if(p&&typeof p.catch==="function")p.catch(fallback);
- // Some mobile browsers leave the request pending without firing an error event.
- fallbackTimer=setTimeout(fallback,6000);
+ const p=a.play();if(p&&typeof p.catch==="function")p.catch(failed);
+ // A stalled request must not fall through to the device's speech engine.
+ setTimeout(()=>{if(activeAudio===a&&a.paused&&!a.ended)failed();},6000);
 }
 async function getTranslation(w){
  try{
@@ -311,6 +304,7 @@ renderStats();renderSentences();loadOnline();
 </script>
 </body>
 </html>
+
 
 
 
